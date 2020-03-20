@@ -109,36 +109,36 @@ class PriorBox():
 
 def get_anchors(img_size = (300,300)):
     net = {} 
-    priorbox = PriorBox(img_size, 30.0,max_size = 60.0, aspect_ratios=[2, 3],
+    priorbox = PriorBox(img_size, 21.0,max_size = 45.0, aspect_ratios=[2, 3],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='conv4_3_norm_mbox_priorbox')
     net['conv4_3_norm_mbox_priorbox'] = priorbox.call([38,38])
 
 
-    priorbox = PriorBox(img_size, 60.0, max_size=111.0, aspect_ratios=[2, 3],
+    priorbox = PriorBox(img_size, 45.0, max_size=99.0, aspect_ratios=[2, 3],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='fc7_mbox_priorbox')
     net['fc7_mbox_priorbox'] = priorbox.call([19,19])
 
 
-    priorbox = PriorBox(img_size, 111.0, max_size=162.0, aspect_ratios=[2, 3],
+    priorbox = PriorBox(img_size, 99.0, max_size=153.0, aspect_ratios=[2, 3],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='conv6_2_mbox_priorbox')
     net['conv6_2_mbox_priorbox'] = priorbox.call([10,10])
 
 
-    priorbox = PriorBox(img_size, 152.0, max_size=213.0, aspect_ratios=[2, 3],
+    priorbox = PriorBox(img_size, 153.0, max_size=207.0, aspect_ratios=[2, 3],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='conv7_2_mbox_priorbox')
     net['conv7_2_mbox_priorbox'] = priorbox.call([5,5])
 
 
-    priorbox = PriorBox(img_size, 213.0, max_size=264.0, aspect_ratios=[2],
+    priorbox = PriorBox(img_size, 207.0, max_size=261.0, aspect_ratios=[2],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='conv8_2_mbox_priorbox')
     net['conv8_2_mbox_priorbox'] = priorbox.call([3,3])
 
-    priorbox = PriorBox(img_size, 264.0, max_size=315.0, aspect_ratios=[2],
+    priorbox = PriorBox(img_size, 261.0, max_size=315.0, aspect_ratios=[2],
                         variances=[0.1, 0.1, 0.2, 0.2],
                         name='pool6_mbox_priorbox')
                         
