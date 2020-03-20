@@ -1,0 +1,2 @@
+# RFB-keras
+这是一个利用Keras实现RFBnet的库，RFBnet是SSD的改进版，其整体的结构与SSD相差不大，其主要特点是在SSD的特征提取网络上用了RFB模块。
