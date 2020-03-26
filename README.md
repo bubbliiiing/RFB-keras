@@ -1,11 +1,16 @@
 # RFB-keras
-这是一个利用Keras实现RFBnet的库，RFBnet是SSD的改进版，其整体的结构与SSD相差不大，其主要特点是在SSD的特征提取网络上用了RFB模块。
+这是一个利用Keras实现RFBnet的库，RFBnet是SSD的改进版，其整体的结构与SSD相差不大，其主要特点是在SSD的特征提取网络上用了RFB模块。  
 
-# 文件下载
+## 所需环境
+tensorflow-gpu==1.13.1  
+keras==2.1.5  
+
+## 文件下载
 训练所需的RFB_weights.h5可以在百度云下载。  
 链接: https://pan.baidu.com/s/1sLv4aHbgoVHN_bdLTa0O0A  
 提取码: 58px 
-# 训练步骤
+
+## 训练步骤
 1、本文使用VOC格式进行训练。  
 2、训练前将标签文件放在VOCdevkit文件夹下的VOC2007文件夹下的Annotation中。  
 3、训练前将图片文件放在VOCdevkit文件夹下的VOC2007文件夹下的JPEGImages中。  
@@ -18,7 +23,7 @@ classes = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat"
 7、在训练前需要修改model_data里面的voc_classes.txt文件，需要将classes改成你自己的classes。  
 8、修改train.py里面的NUM_CLASSES与需要训练的种类的个数相同。运行train.py即可开始训练。
 
-# Reference
+## Reference
 https://github.com/pierluigiferrari/ssd_keras  
 https://github.com/kuhung/SSD_keras  
 https://github.com/ruinmessi/RFBNet
