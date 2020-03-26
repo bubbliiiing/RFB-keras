@@ -1,4 +1,4 @@
-## RFBnet目标检测在Keras当中的实现
+## RFBnet目标检测模型在Keras当中的实现
 ---
 
 ### 目录
