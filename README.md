@@ -13,9 +13,8 @@ keras==2.1.5
 
 ### 文件下载
 训练所需的RFB_weights.h5可以在百度云下载。  
-链接: https://pan.baidu.com/s/1sLv4aHbgoVHN_bdLTa0O0A  
-提取码: 58px 
-
+链接: https://pan.baidu.com/s/1BH3Aop0BBdxs439p14svuA  
+提取码: 8dve
 ### 训练步骤
 1、本文使用VOC格式进行训练。  
 2、训练前将标签文件放在VOCdevkit文件夹下的VOC2007文件夹下的Annotation中。  
