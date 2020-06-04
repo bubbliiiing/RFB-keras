@@ -205,16 +205,15 @@ class Generator(object):
             targets = []
             for annotation_line in lines:  
                 img,y=self.get_random_data(annotation_line,self.image_size[0:2])
-                if len(y)==0:
-                    continue
-                boxes = np.array(y[:,:4],dtype=np.float32)
-                boxes[:,0] = boxes[:,0]/self.image_size[1]
-                boxes[:,1] = boxes[:,1]/self.image_size[0]
-                boxes[:,2] = boxes[:,2]/self.image_size[1]
-                boxes[:,3] = boxes[:,3]/self.image_size[0]
-                one_hot_label = np.eye(self.num_classes)[np.array(y[:,4],np.int32)]
-                if ((boxes[:,3]-boxes[:,1])<=0).any() and ((boxes[:,2]-boxes[:,0])<=0).any():
-                    continue
+                if len(y)!=0:
+                    boxes = np.array(y[:,:4],dtype=np.float32)
+                    boxes[:,0] = boxes[:,0]/self.image_size[1]
+                    boxes[:,1] = boxes[:,1]/self.image_size[0]
+                    boxes[:,2] = boxes[:,2]/self.image_size[1]
+                    boxes[:,3] = boxes[:,3]/self.image_size[0]
+                    one_hot_label = np.eye(self.num_classes)[np.array(y[:,4],np.int32)]
+                    if ((boxes[:,3]-boxes[:,1])<=0).any() and ((boxes[:,2]-boxes[:,0])<=0).any():
+                        continue
                 
                 y = np.concatenate([boxes,one_hot_label],axis=-1)
 
