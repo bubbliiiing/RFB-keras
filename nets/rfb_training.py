@@ -215,7 +215,7 @@ class Generator(object):
                     if ((boxes[:,3]-boxes[:,1])<=0).any() and ((boxes[:,2]-boxes[:,0])<=0).any():
                         continue
                 
-                y = np.concatenate([boxes,one_hot_label],axis=-1)
+                    y = np.concatenate([boxes,one_hot_label],axis=-1)
 
                 y = self.bbox_util.assign_boxes(y)
                 inputs.append(img)                
