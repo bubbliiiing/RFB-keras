@@ -67,7 +67,7 @@ if __name__ == "__main__":
     for i in range(21):
         model.layers[i].trainable = False
     if True:
-        model.compile(optimizer=Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0),
+        model.compile(optimizer=Adam(lr=5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0),
                         loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
         model.fit_generator(gen.generate(True), 
                 steps_per_epoch=num_train//BATCH_SIZE/2,
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 initial_epoch=0,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping])
     if True:
-        model.compile(optimizer=Adam(lr=1e-5, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0),
+        model.compile(optimizer=Adam(lr=2e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0),
                         loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
         model.fit_generator(gen.generate(True), 
                 steps_per_epoch=num_train//BATCH_SIZE/2,
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     for i in range(21):
         model.layers[i].trainable = True
     if True:
-        model.compile(optimizer=Adam(lr=1e-6, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0),loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
+        model.compile(optimizer=Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0),loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
         model.fit_generator(gen.generate(True), 
                 steps_per_epoch=num_train//BATCH_SIZE,
                 validation_data=gen.generate(False),
