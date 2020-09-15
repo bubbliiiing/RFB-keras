@@ -13,7 +13,7 @@
 ### 性能情况
 | 训练数据集 | 权值文件名称 | 测试数据集 | 输入图片大小 | mAP 0.5:0.95 | mAP 0.5 |
 | :-----: | :-----: | :------: | :------: | :------: | :-----: |
-| VOC07+12 | [rfb_weights.h5](https://github.com/bubbliiiing/RFB-keras/releases/download/v1.0/rfb_weights.h5) | VOC-Test07 | 320x320 | - | 81.42
+| VOC07+12 | [rfb_weights.h5](https://github.com/bubbliiiing/RFB-keras/releases/download/v1.0/rfb_weights.h5) | VOC-Test07 | 300x300 | - | 81.42
 
 
 ### 所需环境
