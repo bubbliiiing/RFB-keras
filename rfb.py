@@ -15,10 +15,10 @@ from PIL import Image,ImageFont, ImageDraw
 #--------------------------------------------#
 class RFB(object):
     _defaults = {
-        "model_path": 'model_data/rfb_weights.h5',
-        "classes_path": 'model_data/voc_classes.txt',
-        "model_image_size" : (300, 300, 3),
-        "confidence": 0.4,
+        "model_path"        : 'model_data/rfb_weights.h5',
+        "classes_path"      : 'model_data/voc_classes.txt',
+        "model_image_size"  : (300, 300, 3),
+        "confidence"        : 0.4,
     }
 
     @classmethod
