@@ -73,7 +73,6 @@ class RFB(object):
         #-------------------------------#
         self.rfb_model = rfb.rfb300(self.model_image_size, self.num_classes, anchors_size=self.anchors_size)
         self.rfb_model.load_weights(self.model_path)
-        self.rfb_model.save_weights(self.model_path)
         print('{} model, anchors, and classes loaded.'.format(model_path))
 
         # 画框设置不同的颜色
