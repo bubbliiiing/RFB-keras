@@ -14,21 +14,28 @@ class mAP_RFB(RFB):
         self.confidence = 0.01
         f = open("./input/detection-results/"+image_id+".txt","w") 
         image_shape = np.array(np.shape(image)[0:2])
-        crop_img,x_offset,y_offset = letterbox_image(image, (self.model_image_size[0],self.model_image_size[1]))
+        #---------------------------------------------------------#
+        #   给图像增加灰条，实现不失真的resize
+        #---------------------------------------------------------#
+        crop_img = letterbox_image(image, (self.model_image_size[0],self.model_image_size[1]))
         photo = np.array(crop_img,dtype = np.float64)
-
-        # 图片预处理，归一化
+        #-----------------------------------------------------------#
+        #   图片预处理，归一化。获得的photo的shape为[1, 512, 512, 3]
+        #-----------------------------------------------------------#
         photo = preprocess_input(np.reshape(photo,[1,self.model_image_size[0],self.model_image_size[1],3]))
-        preds = self.rfb_model.predict(photo)
 
-        # 将预测结果进行解码
+        preds = self.rfb_model.predict(photo)
+        #-----------------------------------------------------------#
+        #   将预测结果进行解码
+        #-----------------------------------------------------------#
         results = self.bbox_util.detection_out(preds, confidence_threshold=self.confidence)
         
         if len(results[0])<=0:
-            f.close()
-            return
+            return 
 
-        # 筛选出其中得分高于confidence的框
+        #-----------------------------------------------------------#
+        #   筛选出其中得分高于confidence的框 
+        #-----------------------------------------------------------#
         det_label = results[0][:, 0]
         det_conf = results[0][:, 1]
         det_xmin, det_ymin, det_xmax, det_ymax = results[0][:, 2], results[0][:, 3], results[0][:, 4], results[0][:, 5]
@@ -37,9 +44,10 @@ class mAP_RFB(RFB):
         top_label_indices = det_label[top_indices].tolist()
         top_xmin, top_ymin, top_xmax, top_ymax = np.expand_dims(det_xmin[top_indices],-1),np.expand_dims(det_ymin[top_indices],-1),np.expand_dims(det_xmax[top_indices],-1),np.expand_dims(det_ymax[top_indices],-1)
         
-        # 去掉灰条
+        #-----------------------------------------------------------#
+        #   去掉灰条部分
+        #-----------------------------------------------------------#
         boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
-
 
         for i, c in enumerate(top_label_indices):
             predicted_class = self.class_names[int(c)-1]

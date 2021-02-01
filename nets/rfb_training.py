@@ -1,13 +1,12 @@
-import tensorflow as tf
 from random import shuffle
-import numpy as np
+
 import cv2
-from scipy.misc import imread
-from scipy.misc import imresize
-from PIL import Image
-from keras.applications.imagenet_utils import preprocess_input
+import numpy as np
+import tensorflow as tf
 from keras import backend as K
-from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+from keras.applications.imagenet_utils import preprocess_input
+from PIL import Image
+
 
 class MultiboxLoss(object):
     def __init__(self, num_classes, alpha=1.0, neg_pos_ratio=3.0,
@@ -33,85 +32,91 @@ class MultiboxLoss(object):
         return softmax_loss
 
     def compute_loss(self, y_true, y_pred):
-        batch_size = tf.shape(y_true)[0]
         num_boxes = tf.to_float(tf.shape(y_true)[1])
 
-        # 计算所有的loss
-        # 分类的loss
-        # batch_size,8732,21 -> batch_size,8732
+        # --------------------------------------------- #
+        #   分类的loss
+        #   batch_size,8732,21 -> batch_size,8732
+        # --------------------------------------------- #
         conf_loss = self._softmax_loss(y_true[:, :, 4:-8],
                                        y_pred[:, :, 4:-8])
-        # 框的位置的loss
-        # batch_size,8732,4 -> batch_size,8732
+        # --------------------------------------------- #
+        #   框的位置的loss
+        #   batch_size,8732,4 -> batch_size,8732
+        # --------------------------------------------- #
         loc_loss = self._l1_smooth_loss(y_true[:, :, :4],
                                         y_pred[:, :, :4])
 
-        # 获取所有的正标签的loss
-        # 每一张图的pos的个数
-        num_pos = tf.reduce_sum(y_true[:, :, -8], axis=-1)
-        # 每一张图的pos_loc_loss
+        # --------------------------------------------- #
+        #   获取所有的正标签的loss
+        # --------------------------------------------- #
         pos_loc_loss = tf.reduce_sum(loc_loss * y_true[:, :, -8],
                                      axis=1)
-        # 每一张图的pos_conf_loss
         pos_conf_loss = tf.reduce_sum(conf_loss * y_true[:, :, -8],
                                       axis=1)
 
-        # 获取一定的负样本
-        num_neg = tf.minimum(self.neg_pos_ratio * num_pos,
-                             num_boxes - num_pos)
+        # --------------------------------------------- #
+        #   每一张图的正样本的个数
+        #   batch_size,
+        # --------------------------------------------- #
+        num_pos = tf.reduce_sum(y_true[:, :, -8], axis=-1)
 
+        # --------------------------------------------- #
+        #   每一张图的负样本的个数
+        #   batch_size,
+        # --------------------------------------------- #
+        num_neg = tf.minimum(self.neg_pos_ratio * num_pos, num_boxes - num_pos)
         # 找到了哪些值是大于0的
         pos_num_neg_mask = tf.greater(num_neg, 0)
-        # 获得一个1.0
+        # --------------------------------------------- #
+        #   如果所有的图，正样本的数量均为0
+        #   那么则默认选取100个先验框作为负样本
+        # --------------------------------------------- #
         has_min = tf.to_float(tf.reduce_any(pos_num_neg_mask))
-        num_neg = tf.concat( axis=0,values=[num_neg,
-                                [(1 - has_min) * self.negatives_for_hard]])
-        # 求平均每个图片要取多少个负样本
-        num_neg_batch = tf.reduce_mean(tf.boolean_mask(num_neg,
-                                                      tf.greater(num_neg, 0)))
+        num_neg = tf.concat(axis=0, values=[num_neg, [(1 - has_min) * self.negatives_for_hard]])
+        
+        # --------------------------------------------- #
+        #   从这里往后，与视频中看到的代码有些许不同。
+        #   由于以前的负样本选取方式存在一些问题，
+        #   我对该部分代码进行重构。
+        #   求整个batch应该的负样本数量总和
+        # --------------------------------------------- #
+        num_neg_batch = tf.reduce_sum(tf.boolean_mask(num_neg, tf.greater(num_neg, 0)))
         num_neg_batch = tf.to_int32(num_neg_batch)
 
-        # conf的起始
+        # --------------------------------------------- #
+        #   对预测结果进行判断，如果该先验框没有包含物体
+        #   那么它的不属于背景的预测概率过大的话
+        #   就是难分类样本
+        # --------------------------------------------- #
         confs_start = 4 + self.background_label_id + 1
-        # conf的结束
         confs_end = confs_start + self.num_classes - 1
 
-        # 找到实际上在该位置不应该有预测结果的框，求他们最大的置信度。
-        max_confs = tf.reduce_max(y_pred[:, :, confs_start:confs_end],
-                                  axis=2)
+        # --------------------------------------------- #
+        #   batch_size,8732
+        #   把不是背景的概率求和，求和后的概率越大
+        #   代表越难分类。
+        # --------------------------------------------- #
+        max_confs = tf.reduce_sum(y_pred[:, :, confs_start:confs_end], axis=2)
 
-        # 取top_k个置信度，作为负样本
-        _, indices = tf.nn.top_k(max_confs * (1 - y_true[:, :, -8]),
-                                 k=num_neg_batch)
+        # --------------------------------------------------- #
+        #   只有没有包含物体的先验框才得到保留
+        #   我们在整个batch里面选取最难分类的num_neg_batch个
+        #   先验框作为负样本。
+        # --------------------------------------------------- #
+        max_confs = tf.reshape(max_confs * (1 - y_true[:, :, -8]), [-1])
+        _, indices = tf.nn.top_k(max_confs, k=num_neg_batch)
 
-        # 找到其在1维上的索引
-        batch_idx = tf.expand_dims(tf.range(0, batch_size), 1)
-        batch_idx = tf.tile(batch_idx, (1, num_neg_batch))
-        full_indices = (tf.reshape(batch_idx, [-1]) * tf.to_int32(num_boxes) +
-                        tf.reshape(indices, [-1]))
-        
-        # full_indices = tf.concat(2, [tf.expand_dims(batch_idx, 2),
-        #                              tf.expand_dims(indices, 2)])
-        # neg_conf_loss = tf.gather_nd(conf_loss, full_indices)
-        neg_conf_loss = tf.gather(tf.reshape(conf_loss, [-1]),
-                                  full_indices)
-        neg_conf_loss = tf.reshape(neg_conf_loss,
-                                   [batch_size, num_neg_batch])
-        neg_conf_loss = tf.reduce_sum(neg_conf_loss, axis=1)
+        neg_conf_loss = tf.gather(tf.reshape(conf_loss, [-1]), indices)
 
-        # loss is sum of positives and negatives
-        
-        num_pos = tf.where(tf.not_equal(num_pos, 0), num_pos,
-                            tf.ones_like(num_pos))
-        total_loss = tf.reduce_sum(pos_conf_loss) + tf.reduce_sum(neg_conf_loss)
+        # 进行归一化
+        num_pos     = tf.where(tf.not_equal(num_pos, 0), num_pos, tf.ones_like(num_pos))
+        total_loss  = tf.reduce_sum(pos_conf_loss) + tf.reduce_sum(neg_conf_loss) + tf.reduce_sum(self.alpha * pos_loc_loss)
         total_loss /= tf.reduce_sum(num_pos)
-        total_loss += tf.reduce_sum(self.alpha * pos_loc_loss) / tf.reduce_sum(num_pos)
-
         return total_loss
 
 def rand(a=0, b=1):
     return np.random.rand()*(b-a) + a
-
 
 class Generator(object):
     def __init__(self, bbox_util,batch_size,
@@ -119,24 +124,54 @@ class Generator(object):
                  ):
         self.bbox_util = bbox_util
         self.batch_size = batch_size
+
         self.train_lines = train_lines
         self.val_lines = val_lines
-        self.train_batches = len(train_lines)
-        self.val_batches = len(val_lines)
+
         self.image_size = image_size
-        self.num_classes = num_classes-1
+        self.num_classes = num_classes - 1
         
-    def get_random_data(self, annotation_line, input_shape, jitter=.3, hue=.1, sat=1.5, val=1.5):
-        '''r实时数据增强的随机预处理'''
+    def get_random_data(self, annotation_line, input_shape, jitter=.3, hue=.1, sat=1.5, val=1.5, random=True):
+        '''实时数据增强的随机预处理'''
         line = annotation_line.split()
         image = Image.open(line[0])
         iw, ih = image.size
         h, w = input_shape
         box = np.array([np.array(list(map(int,box.split(',')))) for box in line[1:]])
 
+        if not random:
+            # resize image
+            scale = min(w/iw, h/ih)
+            nw = int(iw*scale)
+            nh = int(ih*scale)
+            dx = (w-nw)//2
+            dy = (h-nh)//2
+
+            image = image.resize((nw,nh), Image.BICUBIC)
+            new_image = Image.new('RGB', (w,h), (128,128,128))
+            new_image.paste(image, (dx, dy))
+            image_data = np.array(new_image, np.float32)
+
+            # correct boxes
+            box_data = np.zeros((len(box),5))
+            if len(box)>0:
+                np.random.shuffle(box)
+                box[:, [0,2]] = box[:, [0,2]]*nw/iw + dx
+                box[:, [1,3]] = box[:, [1,3]]*nh/ih + dy
+                box[:, 0:2][box[:, 0:2]<0] = 0
+                box[:, 2][box[:, 2]>w] = w
+                box[:, 3][box[:, 3]>h] = h
+                box_w = box[:, 2] - box[:, 0]
+                box_h = box[:, 3] - box[:, 1]
+                box = box[np.logical_and(box_w>1, box_h>1)]
+                box_data = np.zeros((len(box),5))
+                box_data[:len(box)] = box
+
+            return image_data, box_data
+
         # resize image
         new_ar = w/h * rand(1-jitter,1+jitter)/rand(1-jitter,1+jitter)
-        scale = rand(.5, 1.5)
+        scale = rand(.25, 2)
         if new_ar < 1:
             nh = int(scale*h)
             nw = int(nh*new_ar)
@@ -186,13 +221,8 @@ class Generator(object):
             box = box[np.logical_and(box_w>1, box_h>1)] # discard invalid box
             box_data = np.zeros((len(box),5))
             box_data[:len(box)] = box
-        if len(box) == 0:
-            return image_data, []
 
-        if (box_data[:,:4]>0).any():
-            return image_data, box_data
-        else:
-            return image_data, []
+        return image_data, box_data
 
     def generate(self, train=True):
         while True:
@@ -203,10 +233,15 @@ class Generator(object):
             else:
                 shuffle(self.val_lines)
                 lines = self.val_lines
+
             inputs = []
             targets = []
             for annotation_line in lines:  
-                img,y=self.get_random_data(annotation_line,self.image_size[0:2])
+                if train:
+                    img, y = self.get_random_data(annotation_line, self.image_size[0:2])
+                else:
+                    img, y = self.get_random_data(annotation_line, self.image_size[0:2], random=False)
+
                 if len(y)!=0:
                     boxes = np.array(y[:,:4],dtype=np.float32)
                     boxes[:,0] = boxes[:,0]/self.image_size[1]
@@ -216,11 +251,10 @@ class Generator(object):
                     one_hot_label = np.eye(self.num_classes)[np.array(y[:,4],np.int32)]
                     if ((boxes[:,3]-boxes[:,1])<=0).any() and ((boxes[:,2]-boxes[:,0])<=0).any():
                         continue
-                
-                    y = np.concatenate([boxes,one_hot_label],axis=-1)
+                    y = np.concatenate([boxes, one_hot_label],axis=-1)
 
                 y = self.bbox_util.assign_boxes(y)
-                inputs.append(img)                
+                inputs.append(img)               
                 targets.append(y)
                 if len(targets) == self.batch_size:
                     tmp_inp = np.array(inputs)
@@ -228,3 +262,4 @@ class Generator(object):
                     inputs = []
                     targets = []
                     yield preprocess_input(tmp_inp), tmp_targets
+
