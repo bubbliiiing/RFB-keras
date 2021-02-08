@@ -1,11 +1,15 @@
-from keras.layers import Input
-from rfb import RFB
-from PIL import Image
-from keras.applications.imagenet_utils import preprocess_input
-from utils.utils import BBoxUtility,letterbox_image,rfb_correct_boxes
-from tqdm import tqdm
-import numpy as np
 import os
+
+import numpy as np
+from keras.applications.imagenet_utils import preprocess_input
+from keras.layers import Input
+from PIL import Image
+from tqdm import tqdm
+
+from rfb import RFB
+from utils.utils import BBoxUtility, letterbox_image, rfb_correct_boxes
+
+
 class mAP_RFB(RFB):
     #---------------------------------------------------#
     #   检测图片
@@ -16,8 +20,13 @@ class mAP_RFB(RFB):
         image_shape = np.array(np.shape(image)[0:2])
         #---------------------------------------------------------#
         #   给图像增加灰条，实现不失真的resize
+        #   也可以直接resize进行识别
         #---------------------------------------------------------#
-        crop_img = letterbox_image(image, (self.model_image_size[0],self.model_image_size[1]))
+        if self.letterbox_image:
+            crop_img = np.array(letterbox_image(image, (self.model_image_size[1],self.model_image_size[0])))
+        else:
+            crop_img = image.convert('RGB')
+            crop_img = crop_img.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
         photo = np.array(crop_img,dtype = np.float64)
         #-----------------------------------------------------------#
         #   图片预处理，归一化。获得的photo的shape为[1, 512, 512, 3]
@@ -47,8 +56,15 @@ class mAP_RFB(RFB):
         #-----------------------------------------------------------#
         #   去掉灰条部分
         #-----------------------------------------------------------#
-        boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
-
+        if self.letterbox_image:
+            boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
+        else:
+            top_xmin = top_xmin * image_shape[1]
+            top_ymin = top_ymin * image_shape[0]
+            top_xmax = top_xmax * image_shape[1]
+            top_ymax = top_ymax * image_shape[0]
+            boxes = np.concatenate([top_ymin,top_xmin,top_ymax,top_xmax], axis=-1)
+            
         for i, c in enumerate(top_label_indices):
             predicted_class = self.class_names[int(c)-1]
             score = str(top_conf[i])

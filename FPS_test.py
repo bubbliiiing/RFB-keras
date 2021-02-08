@@ -20,7 +20,15 @@ video.py里面测试的FPS会低于该FPS，因为摄像头的读取频率有限
 class FPS_RFB(RFB):
     def get_FPS(self, image, test_interval):
         image_shape = np.array(np.shape(image)[0:2])
-        crop_img = letterbox_image(image, (self.model_image_size[0],self.model_image_size[1]))
+        #---------------------------------------------------------#
+        #   给图像增加灰条，实现不失真的resize
+        #   也可以直接resize进行识别
+        #---------------------------------------------------------#
+        if self.letterbox_image:
+            crop_img = np.array(letterbox_image(image, (self.model_image_size[1],self.model_image_size[0])))
+        else:
+            crop_img = image.convert('RGB')
+            crop_img = crop_img.resize((self.model_image_size[1],self.model_image_size[0]), Image.BICUBIC)
         photo = np.array(crop_img,dtype = np.float64)
         photo = preprocess_input(np.reshape(photo,[1,self.model_image_size[0],self.model_image_size[1],3]))
 
@@ -36,8 +44,18 @@ class FPS_RFB(RFB):
             top_label_indices = det_label[top_indices].tolist()
             top_xmin, top_ymin, top_xmax, top_ymax = np.expand_dims(det_xmin[top_indices],-1),np.expand_dims(det_ymin[top_indices],-1),np.expand_dims(det_xmax[top_indices],-1),np.expand_dims(det_ymax[top_indices],-1)
 
-            boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
-
+            #-----------------------------------------------------------#
+            #   去掉灰条部分
+            #-----------------------------------------------------------#
+            if self.letterbox_image:
+                boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
+            else:
+                top_xmin = top_xmin * image_shape[1]
+                top_ymin = top_ymin * image_shape[0]
+                top_xmax = top_xmax * image_shape[1]
+                top_ymax = top_ymax * image_shape[0]
+                boxes = np.concatenate([top_ymin,top_xmin,top_ymax,top_xmax], axis=-1)
+            
         t1 = time.time()
         for _ in range(test_interval):
             preds = self.rfb_model.predict(photo)
@@ -52,8 +70,18 @@ class FPS_RFB(RFB):
                 top_label_indices = det_label[top_indices].tolist()
                 top_xmin, top_ymin, top_xmax, top_ymax = np.expand_dims(det_xmin[top_indices],-1),np.expand_dims(det_ymin[top_indices],-1),np.expand_dims(det_xmax[top_indices],-1),np.expand_dims(det_ymax[top_indices],-1)
 
-                boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
-
+                #-----------------------------------------------------------#
+                #   去掉灰条部分
+                #-----------------------------------------------------------#
+                if self.letterbox_image:
+                    boxes = rfb_correct_boxes(top_ymin,top_xmin,top_ymax,top_xmax,np.array([self.model_image_size[0],self.model_image_size[1]]),image_shape)
+                else:
+                    top_xmin = top_xmin * image_shape[1]
+                    top_ymin = top_ymin * image_shape[0]
+                    top_xmax = top_xmax * image_shape[1]
+                    top_ymax = top_ymax * image_shape[0]
+                    boxes = np.concatenate([top_ymin,top_xmin,top_ymax,top_xmax], axis=-1)
+            
         t2 = time.time()
         tact_time = (t2 - t1) / test_interval
         return tact_time

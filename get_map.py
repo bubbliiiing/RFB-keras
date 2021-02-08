@@ -701,7 +701,7 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
         #print(rec)
         prec = tp[:]
         for idx, val in enumerate(tp):
-            prec[idx] = float(tp[idx]) / (fp[idx] + tp[idx])
+            prec[idx] = float(tp[idx]) / np.maximum((fp[idx] + tp[idx]), 1)
         #print(prec)
         ap, mrec, mprec = voc_ap(rec[:], prec[:])
         F1 = np.array(rec)*np.array(prec)/(np.array(prec)+np.array(rec))*2
