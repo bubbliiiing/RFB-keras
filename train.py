@@ -1,21 +1,11 @@
-import os
-import pickle
-import sys
 
-import cv2
-import keras
-import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
 from keras.callbacks import (EarlyStopping, ModelCheckpoint, ReduceLROnPlateau,
                              TensorBoard)
-from keras.models import Model
-from keras.optimizers import SGD, Adam
-from keras.preprocessing import image
+from keras.optimizers import Adam
 
 from nets.rfb import rfb300
-from nets.rfb_training import Generator, MultiboxLoss
+from nets.rfb_training import Generator, MultiboxLoss, LossHistory
 from utils.anchors import get_anchors
 from utils.utils import BBoxUtility
 
@@ -72,6 +62,7 @@ if __name__ == "__main__":
         monitor='val_loss', save_weights_only=True, save_best_only=False, period=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
+    loss_history = LossHistory(log_dir)
 
     #----------------------------------------------------------------------#
     #   验证集的划分在train.py代码里面进行
@@ -98,37 +89,49 @@ if __name__ == "__main__":
     for i in range(21):
         model.layers[i].trainable = False
     if True:
-        Init_epoch = 0
-        Freeze_epoch = 50
-        BATCH_SIZE = 8
-        learning_rate_base = 5e-4
+        Init_epoch          = 0
+        Freeze_epoch        = 50
+        Batch_size          = 8
+        learning_rate_base  = 5e-4
 
-        gen = Generator(bbox_util, BATCH_SIZE, lines[:num_train], lines[num_train:], (input_shape[0], input_shape[1]),NUM_CLASSES)
+        gen                 = Generator(bbox_util, Batch_size, lines[:num_train], lines[num_train:], (input_shape[0], input_shape[1]),NUM_CLASSES)
 
+        epoch_size          = num_train // Batch_size
+        epoch_size_val      = num_val // Batch_size
+
+        if epoch_size == 0 or epoch_size_val == 0:
+            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
+            
         model.compile(optimizer=Adam(lr=learning_rate_base),loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
         model.fit_generator(gen.generate(True), 
-                steps_per_epoch=num_train//BATCH_SIZE,
+                steps_per_epoch=epoch_size,
                 validation_data=gen.generate(False),
-                validation_steps=num_val//BATCH_SIZE,
+                validation_steps=epoch_size_val,
                 epochs=Freeze_epoch, 
                 initial_epoch=Init_epoch,
-                callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+                callbacks=[logging, checkpoint, reduce_lr, early_stopping, loss_history])
 
     for i in range(21):
         model.layers[i].trainable = True
     if True:
-        Freeze_epoch = 50
-        Epoch = 100
-        BATCH_SIZE = 4
-        learning_rate_base = 1e-4
+        Freeze_epoch        = 50
+        Epoch               = 100
+        Batch_size          = 4
+        learning_rate_base  = 1e-4
         
-        gen = Generator(bbox_util, BATCH_SIZE, lines[:num_train], lines[num_train:], (input_shape[0], input_shape[1]),NUM_CLASSES)
+        gen                 = Generator(bbox_util, Batch_size, lines[:num_train], lines[num_train:], (input_shape[0], input_shape[1]),NUM_CLASSES)
+
+        epoch_size          = num_train // Batch_size
+        epoch_size_val      = num_val // Batch_size
+
+        if epoch_size == 0 or epoch_size_val == 0:
+            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
 
         model.compile(optimizer=Adam(lr=learning_rate_base),loss=MultiboxLoss(NUM_CLASSES, neg_pos_ratio=3.0).compute_loss)
         model.fit_generator(gen.generate(True), 
-                steps_per_epoch=num_train//BATCH_SIZE,
+                steps_per_epoch=epoch_size,
                 validation_data=gen.generate(False),
-                validation_steps=num_val//BATCH_SIZE,
+                validation_steps=epoch_size_val,
                 epochs=Epoch, 
                 initial_epoch=Freeze_epoch,
-                callbacks=[logging, checkpoint, reduce_lr, early_stopping])
+                callbacks=[logging, checkpoint, reduce_lr, early_stopping, loss_history])

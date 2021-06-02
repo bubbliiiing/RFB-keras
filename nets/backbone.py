@@ -1,9 +1,5 @@
-import keras.backend as K
-from keras.layers import (Activation, BatchNormalization, Concatenate, Conv2D,
-                          Dense, Flatten, GlobalAveragePooling2D, Input,
-                          Lambda, MaxPooling2D, Reshape, UpSampling2D,
-                          ZeroPadding2D, concatenate, merge)
-from keras.models import Model
+from keras.layers import (Activation, BatchNormalization, Conv2D, Lambda,
+                          MaxPooling2D, UpSampling2D, concatenate)
 
 
 def conv2d_bn(x,filters,num_row,num_col,padding='same',stride=1,dilation_rate=1,relu=True):

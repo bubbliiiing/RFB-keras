@@ -1,7 +1,7 @@
 import keras.backend as K
 import numpy as np
 import tensorflow as tf
-from keras.engine.topology import InputSpec, Layer
+from keras.engine.topology import Layer
 
 
 class PriorBox(Layer):

@@ -2,12 +2,11 @@ import os
 
 import numpy as np
 from keras.applications.imagenet_utils import preprocess_input
-from keras.layers import Input
 from PIL import Image
 from tqdm import tqdm
 
 from rfb import RFB
-from utils.utils import BBoxUtility, letterbox_image, rfb_correct_boxes
+from utils.utils import letterbox_image, rfb_correct_boxes
 
 '''
 这里设置的门限值较低是因为计算map需要用到不同门限条件下的Recall和Precision值。
@@ -95,12 +94,10 @@ if not os.path.exists("./input/detection-results"):
 if not os.path.exists("./input/images-optional"):
     os.makedirs("./input/images-optional")
 
-
 for image_id in tqdm(image_ids):
     image_path = "./VOCdevkit/VOC2007/JPEGImages/"+image_id+".jpg"
     image = Image.open(image_path)
     # image.save("./input/images-optional/"+image_id+".jpg")
     rfb.detect_image(image_id,image)
     
-
 print("Conversion completed!")
