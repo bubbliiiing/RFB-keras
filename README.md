@@ -27,8 +27,8 @@ keras==2.1.5
 
 ## 文件下载
 训练所需的RFB_weights.h5可以在百度云下载。  
-链接: https://pan.baidu.com/s/1u3j_6mRTJQZLiIHFRejnug   
-提取码: i1jr   
+链接: https://pan.baidu.com/s/1vCJ39XNC7fTs_8jmINS38A   
+提取码: dspy   
 
 VOC数据集下载地址如下，里面已经包括了训练集、测试集、验证集（与测试集一样），无需再次划分：  
 链接: https://pan.baidu.com/s/1YuBbBKxm2FGgTU5OfaeC5A    
