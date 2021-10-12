@@ -29,7 +29,7 @@ tensorflow-gpu==1.13.1
 keras==2.1.5  
 
 ## 文件下载
-训练所需的RFB_weights.h5可以在百度云下载。  
+训练所需的RFB_weights.h5和主干网络的权值可以在百度云下载。  
 链接: https://pan.baidu.com/s/1vCJ39XNC7fTs_8jmINS38A   
 提取码: dspy   
 
