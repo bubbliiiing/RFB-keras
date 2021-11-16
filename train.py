@@ -197,7 +197,7 @@ if __name__ == "__main__":
         batch_size  = Unfreeze_batch_size
         lr          = Unfreeze_lr
         start_epoch = Freeze_Epoch
-        end_epoch   = UnFreeze_Epoch)
+        end_epoch   = UnFreeze_Epoch
 
         epoch_step          = num_train // batch_size
         epoch_step_val      = num_val // batch_size
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         model.compile(optimizer=Adam(lr = lr), loss = MultiboxLoss(num_classes, neg_pos_ratio=3.0).compute_loss)
 
         train_dataloader    = RFBDatasets(train_lines, input_shape, anchors, batch_size, num_classes, train = True)
-        val_dataloader      = RFBDatasets(val_lines, input_shape, anchors, batch_size, num_classes, train = False
+        val_dataloader      = RFBDatasets(val_lines, input_shape, anchors, batch_size, num_classes, train = False)
 
         print('Train on {} samples, val on {} samples, with batch size {}.'.format(num_train, num_val, batch_size))
         model.fit_generator(
